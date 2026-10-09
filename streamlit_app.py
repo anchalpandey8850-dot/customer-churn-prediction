@@ -1,18 +1,17 @@
 
+```python
 import streamlit as st
 import pandas as pd
-import joblib
-
-# Load model and preprocessing objects
-model = joblib.load("churn_logistic_regression_model.pkl")
-preprocessor = joblib.load("preprocessor.pkl")
-feature_selector = joblib.load("feature_selector.pkl")
+import requests
 
 st.set_page_config(
     page_title="Customer Churn Prediction",
     page_icon="📊",
     layout="centered"
 )
+
+# FastAPI backend URL — replace with your actual Render URL
+API_URL = "https://YOUR-RENDER-BACKEND-URL.onrender.com/predict"
 
 st.title("📊 Customer Churn Prediction")
 st.write("Enter customer details to predict the probability of churn.")
@@ -76,10 +75,7 @@ Contract = st.selectbox(
     ["Month-to-month", "One year", "Two year"]
 )
 
-PaperlessBilling = st.selectbox(
-    "Paperless Billing",
-    ["Yes", "No"]
-)
+PaperlessBilling = st.selectbox("Paperless Billing", ["Yes", "No"])
 
 PaymentMethod = st.selectbox(
     "Payment Method",
@@ -123,7 +119,7 @@ else:
 # Prediction button
 if st.button("Predict Churn"):
 
-    input_data = pd.DataFrame([{
+    input_data = {
         "gender": gender,
         "SeniorCitizen": SeniorCitizen,
         "Partner": Partner,
@@ -146,24 +142,45 @@ if st.button("Predict Churn"):
         "AverageMonthlyCharges": AverageMonthlyCharges,
         "MonthlyCharges_Tenure": MonthlyCharges_Tenure,
         "TenureGroup": TenureGroup
-    }])
+    }
 
     try:
-        transformed_data = preprocessor.transform(input_data)
-        selected_data = feature_selector.transform(transformed_data)
+        with st.spinner("Predicting customer churn..."):
+            response = requests.post(
+                API_URL,
+                json=input_data,
+                timeout=120
+            )
 
-        prediction = model.predict(selected_data)[0]
-        probability = model.predict_proba(selected_data)[0][1]
+        if response.ok:
+            result = response.json()
 
-        if prediction == 1:
-            st.error("⚠️ Customer is likely to CHURN")
+            # These response keys must match your FastAPI /predict response.
+            prediction = result.get("prediction")
+            probability = result.get("churn_probability")
+
+            if prediction is None or probability is None:
+                st.error(
+                    "The API response does not contain the expected "
+                    "'prediction' and 'churn_probability' fields."
+                )
+                st.json(result)
+
+            else:
+                if str(prediction).upper() in ["1", "YES", "CHURN"]:
+                    st.error("⚠️ Customer is likely to CHURN")
+                else:
+                    st.success("✅ Customer is likely to NOT CHURN")
+
+                st.metric(
+                    "Churn Probability",
+                    f"{float(probability) * 100:.2f}%"
+                )
+
         else:
-            st.success("✅ Customer is likely to NOT CHURN")
+            st.error(f"API error ({response.status_code})")
+            st.code(response.text)
 
-        st.metric(
-            "Churn Probability",
-            f"{probability * 100:.2f}%"
-        )
-
-    except Exception as e:
-        st.error(f"Prediction error: {e}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Could not connect to the prediction API: {e}")
+```
