@@ -21,6 +21,7 @@ SeniorCitizen = st.selectbox("Senior Citizen", [0, 1])
 Partner = st.selectbox("Partner", ["Yes", "No"])
 Dependents = st.selectbox("Dependents", ["Yes", "No"])
 
+
 tenure = st.number_input(
     "Tenure (months)",
     min_value=0.0,
@@ -182,4 +183,4 @@ if st.button("Predict Churn"):
 
     except requests.exceptions.RequestException as e:
         st.error(f"Could not connect to the prediction API: {e}")
-```
+
