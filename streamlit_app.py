@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # FastAPI backend URL — replace with your actual Render URL
-API_URL = "https://YOUR-RENDER-BACKEND-URL.onrender.com/predict"
+API_URL = "https://customer-churn-prediction-2-vph2.onrender.com/predict"
 
 st.title("📊 Customer Churn Prediction")
 st.write("Enter customer details to predict the probability of churn.")
