@@ -174,7 +174,7 @@ if st.button("Predict Churn"):
 
                 st.metric(
                     "Churn Probability",
-                    f"{float(probability) * 100:.2f}%"
+                    f"{float(probability):.2f}%"
                 )
 
         else:
